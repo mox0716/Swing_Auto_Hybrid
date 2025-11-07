@@ -1,25 +1,36 @@
 name: Finviz Overnight Swing Email (Hybrid + Filters + HTML)
+
 permissions:
   contents: write
+
 on:
   schedule:
+    # 2:40 PM and 3:40 PM Central (adjusted UTC)
     - cron: "40 19 * * 1-5"
     - cron: "40 20 * * 1-5"
   workflow_dispatch: {}
+
 jobs:
   run-and-email:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
-        with: {fetch-depth: 0}
+        with:
+          fetch-depth: 0
+
       - uses: actions/setup-python@v5
-        with: {python-version: "3.11"}
-      - name: Install deps
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
       - name: Pretrain model (one-time / idempotent)
         run: python scripts/pretrain_historical.py
+
       - name: Run daily hybrid pipeline
         env:
           TO_EMAIL: ${{ secrets.TO_EMAIL }}
@@ -29,7 +40,52 @@ jobs:
           SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
         run: python scripts/run_pipeline.py
+
+      # 🧩 Upload CSV outputs as 30-day GitHub artifacts
+      - name: Upload output CSVs as artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: finviz_outputs_${{ github.run_id }}
+          path: out/*.csv
+          retention-days: 30
+
+      # 🧩 Determine day of week (for weekday-only commits)
+      - id: day
+        run: echo "DAY=$(date -u +%a)" >> $GITHUB_ENV
+
+      # 🧩 Archive outputs in repo (weekdays only)
+      - name: Archive outputs into repo (timestamped)
+        if: success() && contains('Mon Tue Wed Thu Fri', env.DAY)
+        run: |
+          mkdir -p out/archive
+          cp out/*.csv out/archive/
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+          git add out/archive || true
+          if ! git diff --cached --quiet; then
+            git commit -m "Archive output CSVs [${{ github.run_number }}] [skip ci]"
+            git push
+          else
+            echo "No new files to archive."
+
+      # 🧹 NEW: Delete archived files older than 1 year
+      - name: Cleanup old archives (older than 365 days)
+        if: success() && contains('Mon Tue Wed Thu Fri', env.DAY)
+        run: |
+          find out/archive -type f -mtime +365 -name "*.csv" -print -delete || true
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+          git add out/archive || true
+          if ! git diff --cached --quiet; then
+            git commit -m "Auto-cleanup: removed archived CSVs older than 1 year [skip ci]"
+            git push
+          else
+            echo "No old archives to remove."
+
+      # 🧠 Commit updated ML history / training data
       - name: Commit & push updated history (out/)
+        if: success()
         run: |
           git config user.email "actions@github.com"
           git config user.name "github-actions"
@@ -39,4 +95,3 @@ jobs:
             git push
           else
             echo "No changes to commit."
-          fi

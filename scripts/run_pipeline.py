@@ -163,8 +163,22 @@ def send_email(subject, text_body, html_body, attachments):
 
 def main():
     pre_ds_path=os.path.join(OUTDIR,"pretrain_dataset.csv"); training_path=os.path.join(OUTDIR,"training_data.csv")
-    today=datetime.utcnow().strftime("%Y%m%d")
-    attachments=[]; all_rows=[]; per_screener_frames={}; filtered_rows=[]
+
+    now = datetime.utcnow()
+    today = now.strftime("%Y%m%d")
+    timestamp = now.strftime("%H%M")  # adds hour+minute for uniqueness
+    attachments = []
+    all_rows = []
+    per_screener_frames = {}
+    filtered_rows = []
+
+    def ts_name(base):
+        """Helper: build timestamped filenames like run_20251107_1940.csv"""
+        return f"{base}_{today}_{timestamp}.csv"
+
+
+#    today=datetime.utcnow().strftime("%Y%m%d")
+#    attachments=[]; all_rows=[]; per_screener_frames={}; filtered_rows=[]
 #    spy=yf.download("SPY",period="4mo",interval="1d",progress=False); spy_ret20=spy["Adj Close"].pct_change(20)
     spy = yf.download("SPY", period="4mo", interval="1d", progress=False, auto_adjust=False)
     spy_ret20 = spy["Adj Close"].pct_change(20)
