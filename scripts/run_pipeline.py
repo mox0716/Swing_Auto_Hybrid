@@ -210,7 +210,23 @@ def main():
                             "rsi14":feats["rsi14"],"vol_spike":feats["vol_spike"],"bb_pos":feats["bb_pos"],
                             "above_sma20":feats["above_sma20"],"above_sma50":feats["above_sma50"]})
         df_sc=pd.DataFrame(rows); out_path=os.path.join(OUTDIR,f"{name}.csv")
-        (df_sc[["Ticker","Probability","ret5","rel20","rsi14","vol_spike","bb_pos","above_sma20","above_sma50"]] if not df_sc.empty else df_sc).to_csv(out_path,index=False)
+        #(df_sc[["Ticker","Probability","ret5","rel20","rsi14","vol_spike","bb_pos","above_sma20","above_sma50"]] if not df_sc.empty else df_sc).to_csv(out_path,index=False)
+
+        if not df_sc.empty:
+            # 🧩 Keep only the latest row per ticker for this screener
+            df_sc = (
+                df_sc.sort_values(["Ticker", "Date"])
+                .groupby("Ticker", as_index=False)
+                .tail(1)
+            )
+
+            df_sc[["Ticker", "Probability", "ret5", "rel20", "rsi14",
+                   "vol_spike", "bb_pos", "above_sma20", "above_sma50"]
+                  ].to_csv(out_path, index=False)
+        else:
+            df_sc.to_csv(out_path, index=False)
+
+
         attachments.append(out_path); per_screener_frames[name]={"df":df_sc.copy(),"url":url}; all_rows.extend(rows)
     #df_today=pd.DataFrame(all_rows); df_today.to_csv(os.path.join(OUTDIR,f"run_{today}.csv"),index=False)
     # Combine all results
