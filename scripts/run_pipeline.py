@@ -191,7 +191,19 @@ def main():
                 aligned = spy_ret20.align(close.pct_change(20), join="right", axis=0)
                 spy_rs = aligned[0].iloc[-1] if not aligned[0].empty else 0.0
 
-                ret20=close.pct_change(20).iloc[-1]; rel20=(ret20 - (spy_rs if pd.notna(spy_rs) else 0.0))
+                #ret20=close.pct_change(20).iloc[-1]; rel20=(ret20 - (spy_rs if pd.notna(spy_rs) else 0.0))
+                ret20 = close.pct_change(20).iloc[-1]
+
+                # make sure spy_rs is a scalar
+                if isinstance(spy_rs, (pd.Series, np.ndarray, list)):
+                    spy_rs = spy_rs.iloc[-1] if hasattr(spy_rs, "iloc") else float(spy_rs[-1])
+                try:
+                    spy_rs = float(spy_rs)
+                except Exception:
+                    spy_rs = 0.0
+
+                rel20 = ret20 - spy_rs
+
                 p=baseline_prob(feats, rel20, name)
                 rows.append({"Date":today,"Screener":name,"Ticker":t,"Probability":p*100,
                             "ret5":feats["ret5"],"ret20":feats["ret20"],"rel20":rel20,
