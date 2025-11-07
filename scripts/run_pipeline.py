@@ -165,7 +165,10 @@ def main():
     pre_ds_path=os.path.join(OUTDIR,"pretrain_dataset.csv"); training_path=os.path.join(OUTDIR,"training_data.csv")
     today=datetime.utcnow().strftime("%Y%m%d")
     attachments=[]; all_rows=[]; per_screener_frames={}; filtered_rows=[]
-    spy=yf.download("SPY",period="4mo",interval="1d",progress=False); spy_ret20=spy["Adj Close"].pct_change(20)
+#    spy=yf.download("SPY",period="4mo",interval="1d",progress=False); spy_ret20=spy["Adj Close"].pct_change(20)
+    spy = yf.download("SPY", period="4mo", interval="1d", progress=False, auto_adjust=False)
+    spy_ret20 = spy["Adj Close"].pct_change(20)
+
     for name,url in SCREENERS.items():
         tickers=fetch_tickers(url); rows=[]
         if tickers:
