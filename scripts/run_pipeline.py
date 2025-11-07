@@ -187,7 +187,10 @@ def main():
                     delta=(nxt - datetime.utcnow().date()).days
                     if 0<=delta<=2:
                         filtered_rows.append({"Ticker":t,"Screener":name,"Reason":"near_earnings"}); continue
-                aligned=spy_ret20.align(close.pct_change(20), join="right"); spy_rs=aligned[0].iloc[-1] if not aligned[0].empty else 0.0
+                #aligned=spy_ret20.align(close.pct_change(20), join="right"); spy_rs=aligned[0].iloc[-1] if not aligned[0].empty else 0.0
+                aligned = spy_ret20.align(close.pct_change(20), join="right", axis=0)
+                spy_rs = aligned[0].iloc[-1] if not aligned[0].empty else 0.0
+
                 ret20=close.pct_change(20).iloc[-1]; rel20=(ret20 - (spy_rs if pd.notna(spy_rs) else 0.0))
                 p=baseline_prob(feats, rel20, name)
                 rows.append({"Date":today,"Screener":name,"Ticker":t,"Probability":p*100,
