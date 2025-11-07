@@ -6,6 +6,14 @@ from sklearn.calibration import CalibratedClassifierCV
 OUTDIR = 'out'
 os.makedirs(OUTDIR, exist_ok=True)
 
+MODEL_PATH = os.path.join(OUTDIR, 'model_init.pkl')
+DATA_PATH = os.path.join(OUTDIR, 'pretrain_dataset.csv')
+
+# 🛑 Skip retraining if the model already exists
+if os.path.exists(MODEL_PATH) and os.path.exists(DATA_PATH):
+    print(f"✅ Pretraining skipped — model already exists at {MODEL_PATH}")
+    raise SystemExit(0)
+
 DEFAULT = [
     'AAPL','MSFT','NVDA','GOOGL','AMZN','META','AVGO','TSLA',
     'LLY','JPM','V','XOM','UNH','MA','HD','PG','COST','ABBV','ORCL','JNJ'
@@ -28,14 +36,15 @@ def bbpos(c, w=20, k=2.0):
 
 def build(months=9):
     tickers = [t.replace('.', '-') for t in DEFAULT]
-    # ✅ Force auto_adjust=False to include 'Adj Close' and 'Volume'
-    d = yf.download(tickers, period=f'{months}mo', interval='1d',
-                    progress=False, auto_adjust=False, group_by='ticker')
+    print(f"Downloading {len(tickers)} symbols for {months} months...")
+    d = yf.download(
+        tickers, period=f'{months}mo', interval='1d',
+        progress=False, auto_adjust=False, group_by='ticker'
+    )
     s = yf.download('SPY', period=f'{months}mo', interval='1d',
                     progress=False, auto_adjust=False)
 
     rows = []
-
     for t in tickers:
         try:
             df = d[t]
@@ -94,17 +103,20 @@ def build(months=9):
 if __name__ == '__main__':
     df = build(9)
     if df.empty:
+        print("⚠️ No data downloaded — exiting.")
         raise SystemExit(0)
 
     feat = ['ret5','ret20','rel20','rsi14','vol_spike','bb_pos','above_sma20','above_sma50']
     X = df[feat].fillna(0).values
     y = df['Outcome2D_Label'].astype(int).values
 
-    base = RandomForestClassifier(n_estimators=250, max_depth=8,
-                                  random_state=42, class_weight='balanced_subsample')
+    base = RandomForestClassifier(
+        n_estimators=250, max_depth=8,
+        random_state=42, class_weight='balanced_subsample'
+    )
     clf = CalibratedClassifierCV(base, method='sigmoid', cv=3)
     clf.fit(X, y)
 
-    pickle.dump({'clf': clf, 'feat_cols': feat},
-                open(os.path.join(OUTDIR, 'model_init.pkl'), 'wb'))
-    df.to_csv(os.path.join(OUTDIR, 'pretrain_dataset.csv'), index=False)
+    pickle.dump({'clf': clf, 'feat_cols': feat}, open(MODEL_PATH, 'wb'))
+    df.to_csv(DATA_PATH, index=False)
+    print(f"✅ Pretraining complete — model saved to {MODEL_PATH}")
