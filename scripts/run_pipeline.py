@@ -212,7 +212,21 @@ def main():
         df_sc=pd.DataFrame(rows); out_path=os.path.join(OUTDIR,f"{name}.csv")
         (df_sc[["Ticker","Probability","ret5","rel20","rsi14","vol_spike","bb_pos","above_sma20","above_sma50"]] if not df_sc.empty else df_sc).to_csv(out_path,index=False)
         attachments.append(out_path); per_screener_frames[name]={"df":df_sc.copy(),"url":url}; all_rows.extend(rows)
-    df_today=pd.DataFrame(all_rows); df_today.to_csv(os.path.join(OUTDIR,f"run_{today}.csv"),index=False)
+    #df_today=pd.DataFrame(all_rows); df_today.to_csv(os.path.join(OUTDIR,f"run_{today}.csv"),index=False)
+    # Combine all results
+    df_today = pd.DataFrame(all_rows)
+
+    # 🧩 Fix: keep only the latest prediction per ticker
+    if not df_today.empty:
+        df_today = (
+            df_today.sort_values(["Ticker", "Date"])
+            .groupby("Ticker", as_index=False)
+            .tail(1)
+        )
+
+    # Save the cleaned, unique output
+    df_today.to_csv(os.path.join(OUTDIR, f"run_{today}.csv"), index=False)
+
     # save filtered
     pd.DataFrame(filtered_rows).to_csv(os.path.join(OUTDIR,"Filtered_Out.csv"), index=False); attachments.append(os.path.join(OUTDIR,"Filtered_Out.csv"))
     # augment training with outcomes after 3 days
