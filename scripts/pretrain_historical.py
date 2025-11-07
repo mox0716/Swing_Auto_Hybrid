@@ -11,7 +11,12 @@ def bbpos(c,w=20,k=2.0):
     ma=c.rolling(w).mean(); sd=c.rolling(w).std(); up=ma+k*sd; lo=ma-k*sd; sp=(up-lo); return ((c-lo)/sp.replace(0,np.nan)).clip(0,1)
 def build(months=9):
     tick=[t.replace('.','-') for t in DEFAULT]
-    d=yf.download(tick,period=f'{months}mo',interval='1d',progress=False); s=yf.download('SPY',period=f'{months}mo',interval='1d',progress=False)
+    #d=yf.download(tick,period=f'{months}mo',interval='1d',progress=False); s=yf.download('SPY',period=f'{months}mo',interval='1d',progress=False)
+    d = yf.download(tick, period=f'{months}mo', interval='1d',
+                progress=False, auto_adjust=False)
+    s = yf.download('SPY', period=f'{months}mo', interval='1d',
+                progress=False, auto_adjust=False)
+
     if d.empty or s.empty: return pd.DataFrame()
     C=d['Adj Close']; V=d['Volume']; S=s['Adj Close']; rows=[]
     for t in C.columns:
