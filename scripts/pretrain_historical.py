@@ -83,12 +83,17 @@ def build(months=9):
             rt = (c.iloc[i + 2] / c.iloc[i]) - 1.0
             rs2 = (s2 / s0) - 1.0
             ex = rt - rs2
+            try:
+                spy_ret = float(sr20.iloc[i])
+            except Exception:
+                spy_ret = 0.0
+
             rows.append({
                 'Date': d0.strftime('%Y%m%d'),
                 'Ticker': t.replace('-', '.'),
                 'ret5': r5.iloc[i],
                 'ret20': r20.iloc[i],
-                'rel20': (r20.iloc[i] - (sr20.iloc[i] if pd.notna(sr20.iloc[i]) else 0)),
+                'rel20': (r20.iloc[i] - spy_ret),
                 'rsi14': rs.iloc[i],
                 'vol_spike': (vsp.iloc[i] if pd.notna(vsp.iloc[i]) else 1.0),
                 'bb_pos': b.iloc[i],
