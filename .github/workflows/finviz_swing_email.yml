@@ -1,0 +1,41 @@
+name: Finviz Overnight Swing Email (Hybrid + Filters + HTML)
+permissions:
+  contents: write
+on:
+  schedule:
+    - cron: "40 19 * * 1-5"
+    - cron: "40 20 * * 1-5"
+  workflow_dispatch: {}
+jobs:
+  run-and-email:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Pretrain model (one-time / idempotent)
+        run: python scripts/pretrain_historical.py
+      - name: Run daily hybrid pipeline
+        env:
+          TO_EMAIL: ${{ secrets.TO_EMAIL }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+          SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+        run: python scripts/run_pipeline.py
+      - name: Commit & push updated history (out/)
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "github-actions"
+          git add out || true
+          if ! git diff --cached --quiet; then
+            git commit -m "Update ML training data and daily runs [skip ci]"
+            git push
+          else
+            echo "No changes to commit."
