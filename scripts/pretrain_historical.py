@@ -89,18 +89,18 @@ def build(months=9):
                 spy_ret = 0.0
 
             rows.append({
-                'Date': d0.strftime('%Y%m%d'),
-                'Ticker': t.replace('-', '.'),
-                'ret5': r5.iloc[i],
-                'ret20': r20.iloc[i],
-                'rel20': (r20.iloc[i] - spy_ret),
-                'rsi14': rs.iloc[i],
-                'vol_spike': (vsp.iloc[i] if pd.notna(vsp.iloc[i]) else 1.0),
-                'bb_pos': b.iloc[i],
-                'above_sma20': ab20.iloc[i],
-                'above_sma50': ab50.iloc[i],
-                'Outcome2D_Label': int(ex > 0),
-                'Outcome2D_Excess': ex
+                "Date": d0.strftime("%Y%m%d"),
+                "Ticker": t.replace("-", "."),
+                "ret5": r5.iloc[i],
+                "ret20": r20.iloc[i],
+                "rel20": (r20.iloc[i] - spy_ret),
+                "rsi14": rs.iloc[i],
+                "vol_spike": (vsp.iloc[i] if pd.notna(vsp.iloc[i]) else 1.0),
+                "bb_pos": b.iloc[i],
+                "above_sma20": ab20.iloc[i],
+                "above_sma50": ab50.iloc[i],
+                "Outcome2D_Label": int(ex > 0),
+                "Outcome2D_Excess": ex,
             })
 
     return pd.DataFrame(rows)
