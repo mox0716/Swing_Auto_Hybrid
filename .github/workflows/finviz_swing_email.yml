@@ -68,8 +68,9 @@ jobs:
             git push
           else
             echo "No new files to archive."
+          fi
 
-      # 🧹 NEW: Delete archived files older than 1 year
+      # 🧹 Cleanup old archives (older than 1 year)
       - name: Cleanup old archives (older than 365 days)
         if: success() && contains('Mon Tue Wed Thu Fri', env.DAY)
         run: |
@@ -82,6 +83,7 @@ jobs:
             git push
           else
             echo "No old archives to remove."
+          fi
 
       # 🧠 Commit updated ML history / training data
       - name: Commit & push updated history (out/)
@@ -95,3 +97,4 @@ jobs:
             git push
           else
             echo "No changes to commit."
+          fi
