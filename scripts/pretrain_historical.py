@@ -87,6 +87,21 @@ def build(months=9):
                 spy_ret = float(sr20.iloc[i])
             except Exception:
                 spy_ret = 0.0
+            # --- robust scalar extraction for SPY 20-day return
+            val = sr20.iloc[i]
+
+            # handle weird multi-value or misaligned types safely
+            if isinstance(val, (pd.Series, np.ndarray, list)):
+                try:
+                    val = float(val.iloc[0] if hasattr(val, "iloc") else val[0])
+                except Exception:
+                    val = 0.0
+            elif pd.isna(val):
+                val = 0.0
+            else:
+                val = float(val)
+
+            spy_ret = val
 
             rows.append({
                 "Date": d0.strftime("%Y%m%d"),
@@ -95,12 +110,12 @@ def build(months=9):
                 "ret20": r20.iloc[i],
                 "rel20": (r20.iloc[i] - spy_ret),
                 "rsi14": rs.iloc[i],
-                "vol_spike": (vsp.iloc[i] if pd.notna(vsp.iloc[i]) else 1.0),
-                "bb_pos": b.iloc[i],
-                "above_sma20": ab20.iloc[i],
-                "above_sma50": ab50.iloc[i],
+                "vol_spike": float(vsp.iloc[i]) if not pd.isna(vsp.iloc[i]) else 1.0,
+                "bb_pos": float(b.iloc[i]) if not pd.isna(b.iloc[i]) else 0.5,
+                "above_sma20": float(ab20.iloc[i]),
+                "above_sma50": float(ab50.iloc[i]),
                 "Outcome2D_Label": int(ex > 0),
-                "Outcome2D_Excess": ex,
+                "Outcome2D_Excess": float(ex),
             })
 
     return pd.DataFrame(rows)
